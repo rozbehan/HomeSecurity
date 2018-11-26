@@ -9,7 +9,7 @@ namespace MachineTest.Pages
 {
     public class IndexModel : PageModel
     {
-        public string HomeSecurityStatus { get; set; }
+        public string HomeSecurityStatus { get; private set; } = "DISARMED";
         public bool InputCodeVisible { get; private set; } = false;
 
         public void OnGet()
@@ -17,7 +17,7 @@ namespace MachineTest.Pages
             
 
         }
-        public async Task<IActionResult> OnPost()
+        public IActionResult OnPost()
         {
             InputCodeVisible = !InputCodeVisible;
             return RedirectToPage("./Index");
