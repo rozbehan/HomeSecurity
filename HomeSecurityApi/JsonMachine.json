@@ -1,0 +1,40 @@
+﻿{
+  "name": "HomeSecurityFiniteStateMachine",
+  "states": [
+    "DISARMED",
+    "ARMED"
+  ],
+  "events": [
+    "Arm",
+    "Enter_code"
+  ],
+  "actions": [
+    "CodeValidation",
+    "Http200",
+    "Log",
+    "Response"
+  ],
+  "transitions": [
+    {
+      "name": "TransitionOne",
+      "from": "DISARMED",
+      "event": "Arm",
+      "guardConditionCode": "false",
+      "to": "DISARMED",
+      "entryAction": "",
+      "exitAction": "Http200",
+      "insideAction": "Log"
+    },
+    {
+      "name": "TransitionTwo",
+      "from": "DISARMED",
+      "event": "Enter_code",
+      "guardConditionCode": "true",
+      "to": "ARMED",
+      "entryAction": "CodeValidation",
+      "exitAction": "Response",
+      "insideAction": "Log"
+    }
+  ],
+  "initialState": "DISARMED"
+}
