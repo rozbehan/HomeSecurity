@@ -13,7 +13,6 @@ namespace HomeSecurityApi
 {
     public class JsonMachine
     {
-        
         private JObject objectTrigger = new JObject();
         private JArray arrayMachine = new JArray();
 
@@ -23,20 +22,27 @@ namespace HomeSecurityApi
         public string Http200 { get; private set; } = "";
         public string Log { get; private set; } = "";
         public bool CodeValid { get; private set; } = false;
-
-        public JsonMachine(string _event, string _state)
-        {
-
-        }
+        public ApiResponseBody ApiResponse { get; private set; } = new ApiResponseBody();
 
         public JsonMachine()
         {
             MachineString = File.ReadAllText(@"JsonMachine.json");
             MachineObject = JObject.Parse(MachineString);
+        }
+
+        public JsonMachine(string jsonTrigger)
+        {
+            MachineString = File.ReadAllText(@"JsonMachine.json");
+            MachineObject = JObject.Parse(MachineString);
+
+            //objectTrigger = JObject.Parse(@"{'event':'Arm' , 'state':'DISARMED', 'code':'35432556464654'}");
+            objectTrigger = JObject.Parse(jsonTrigger);
+            if (objectTrigger == null)
+            {
+                return;
+            }
 
             string[] actions = MachineObject.SelectToken("actions").Select(s1 => (string)s1).ToArray();
-
-            objectTrigger = JObject.Parse(@"{'event':'Arm' , 'state':'DISARMED', 'code':'35432556464654'}");
 
             var objectCurrent = (from s2 in MachineObject["transitions"]
                       where (string)s2["event"] == (string)objectTrigger["event"]
@@ -49,10 +55,15 @@ namespace HomeSecurityApi
             /// As a constraint if the transiant has a code validation action, it must put in entryAction 
             /// because the state transfers after entryAction
             /// 
-            ChangeMachineState(objectCurrent);
+            if (CodeValid == true)
+            {
+                ChangeMachineState(objectCurrent);
+            }
             TransiantAction(Array.FindAll(actions, s4 => s4.Equals((string)objectCurrent[0]["insideAction"])), objectCurrent);
             TransiantAction(Array.FindAll(actions, s5 => s5.Equals((string)objectCurrent[0]["exitAction"])), objectCurrent);
 
+            ApiResponse.state = SecureParameters.CurrentState();
+            ApiResponse.response = (Response == "" && Http200 != "" ? Http200 : Response);
         }
 
         private void TransiantAction(string[] action, object obj)
@@ -72,7 +83,7 @@ namespace HomeSecurityApi
         {
             if ((string)obj[0]["guardCodeValidation"] == "true")
             {
-                CodeValid = ((new SecureParameters()).ValidateCode((string)objectTrigger["code"])).Passed;
+                CodeValid = SecureParameters.ValidateCode((string)objectTrigger["code"]);
             }
         }
 
@@ -86,7 +97,6 @@ namespace HomeSecurityApi
             Log = @"{'state':'" + (string)obj[0]["state"] + @"', 
                 'event':'" + (string)objectTrigger["event"] + @"', 
                 'time':'" + DateTime.Now.ToString() + @"'}";
-
         }
 
         private void ActionResponse(List<JToken> obj)
@@ -98,10 +108,8 @@ namespace HomeSecurityApi
         {
             if ((string)obj[0]["guardCodeValidation"] == "false" || CodeValid == true)
             {
-                (new SecureParameters()).ChangeCurrentState((string)obj[0]["to"]);
+                SecureParameters.ChangeCurrentState((string)obj[0]["to"]);
             }
         }
-
-       
     }
 }

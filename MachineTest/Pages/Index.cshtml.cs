@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Formatting;
+using Microsoft.AspNetCore.Http.Extensions;
+using System.Text;
 
 namespace MachineTest.Pages
 {
@@ -18,12 +19,11 @@ namespace MachineTest.Pages
 
         static HttpClient client = new HttpClient();
 
-
         public static async Task<Uri> CreateProductAsync()
         {
             var product = @"{'name':'mahdi'}";
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                @"https://gh21pxvwe5.execute-api.us-east-1.amazonaws.com/Prod", product);
+            HttpResponseMessage response = await client.PostAsync(
+                Startup.HomeSecurityApiUrl, new StringContent(product, Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
 
             homeSecurityApiResponse = await response.Content.ReadAsStringAsync();
