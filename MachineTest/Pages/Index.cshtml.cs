@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Http.Extensions;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace MachineTest.Pages
 {
@@ -19,14 +20,20 @@ namespace MachineTest.Pages
 
         static HttpClient client = new HttpClient();
 
-        public static async Task<Uri> CreateProductAsync()
+        public static async Task<Uri> IoTEventAsync()
         {
-            var product = @"{'name':'mahdi'}";
+            //JsonMachine jsonMachine = new JsonMachine(@"{'event':'EnterCode' , 'state':'Disarmed', 'code':'1111'}");
+            //var a = JsonConvert.SerializeObject(jsonMachine.ApiResponse);
+
+            var request = @"{'event':'Arm' , 'state':'DISARMED', 'code':'1111'}";
             HttpResponseMessage response = await client.PostAsync(
-                Startup.HomeSecurityApiUrl, new StringContent(product, Encoding.UTF8, "application/json"));
+                Startup.HomeSecurityApiUrl, new StringContent(request, Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
 
             homeSecurityApiResponse = await response.Content.ReadAsStringAsync();
+
+
+
 
             return response.Headers.Location;
         }

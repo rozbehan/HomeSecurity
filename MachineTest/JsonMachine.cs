@@ -9,11 +9,11 @@ using System.Reflection;
 using System.Net;
 using System.Web;
 
-namespace HomeSecurityApi
+namespace MachineTest
 {
     internal struct MachineDefinition
     {
-        public const string MachineFile = "JsonMachine.json";
+        public const string MachineFile = "JsonMachine.json"; 
         public const string State = "State";
         public const string Action = "Action";
         public const string Event = "Event";

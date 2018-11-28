@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HomeSecurityApi
+namespace MachineTest
 {
     public class ApiResponseBody
     {

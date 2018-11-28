@@ -36,10 +36,12 @@ namespace HomeSecurityApi
 
         public APIGatewayProxyResponse IoTEvent(APIGatewayProxyRequest request, ILambdaContext context)
         {
-
-            context.Logger.LogLine("IoT Post Request\n");
-
+            context.Logger.LogLine("IoTEvent, Post Request\n");
             JsonMachine jsonMachine = new JsonMachine(request?.Body);
+            if (jsonMachine.Log != "")
+            {
+                context.Logger.LogLine(jsonMachine.Log);
+            }
 
             var response = new APIGatewayProxyResponse
             {
