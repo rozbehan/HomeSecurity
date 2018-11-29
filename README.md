@@ -18,14 +18,14 @@ I have used:
 
 Metadata
 
-| stateseventsactionstransitions | FromToEvent | EntryActionInsideActionExitAction  | GuardCodeCondition |
+| states, events, actions, transitions, | From, To, Event, | EntryAction, InsideAction, ExitAction,   | GuardCodeCondition, |
 | --- | --- | --- | --- |
 
 Data
 
-| states | events | actions | transisitions |
+| States, | Events, | Actions, | Transisitions, |
 | --- | --- | --- | --- |
-| DisarmedArmed | ArmDisarmEnterCode | LogCodeValidationResponseHttp200 | Arm, DisarmedEnterCode, DisarmedDisarm, ArmedEnterCode, Armed |
+| Disarmed, Armed, | Arm, Disarm, EnterCode, | Log, CodeValidation, Response, Http200, | Arm, Disarmed, EnterCode, Disarmed, Disarm, Armed, EnterCode, Armed, |
 
 The AWS Lambda Function accepts a JSON in the message body with the keys:
 
