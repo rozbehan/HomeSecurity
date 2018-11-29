@@ -4,6 +4,9 @@ using System.Linq;
 
 namespace HomeSecurityApi
 {
+    /// <summary>
+    /// AWS Lambda Function Environment Variables, a place to store CurrentState and Code
+    /// </summary>
     public static class EnvParameter
     {
         public static void SetDefault()

@@ -1,8 +1,8 @@
 ﻿{
-  "name": "HomeSecurityFiniteStateMachine",
+  "Name": "HomeSecurityFiniteStateMachine",
   "states": [
     "Disarmed",
-    "Aemed"
+    "Armed"
   ],
   "events": [
     "Arm",
@@ -16,75 +16,45 @@
   ],
   "transitions": [
     {
-      "name": "TransitionOne",
-      "from": "Disarmed",
-      "event": "Arm",
-      "guardCodeValidation": "False",
-      "to": "Disarmed",
-      "entryAction": "",
-      "exitAction": "Http200",
-      "insideAction": "Log"
+      "Name": "TransitionOne",
+      "From": "Disarmed",
+      "Event": "Arm",
+      "GuardCodeValidation": "False",
+      "To": "Disarmed",
+      "EntryAction": "",
+      "ExitAction": "Http200",
+      "InsideAction": "Log"
     },
     {
-      "name": "TransitionTwo",
-      "from": "Disarmed",
-      "event": "EnterCode",
-      "guardCodeValidation": "True",
-      "to": "Armed",
-      "entryAction": "CodeValidation",
-      "exitAction": "Response",
-      "insideAction": "Log"
+      "Name": "TransitionTwo",
+      "From": "Disarmed",
+      "Event": "EnterCode",
+      "GuardCodeValidation": "True",
+      "To": "Armed",
+      "EntryAction": "CodeValidation",
+      "ExitAction": "Response",
+      "InsideAction": "Log"
     },
     {
-      "name": "TransitionThree",
-      "from": "Armed",
-      "event": "Disarm",
-      "guardCodeValidation": "False",
-      "to": "Disarmed",
-      "entryAction": "",
-      "exitAction": "Http200",
-      "insideAction": "Log"
+      "Name": "TransitionThree",
+      "From": "Armed",
+      "Event": "Disarm",
+      "GuardCodeValidation": "False",
+      "To": "Disarmed",
+      "EntryAction": "",
+      "ExitAction": "Http200",
+      "InsideAction": "Log"
     },
     {
-      "name": "TransitionFour",
-      "from": "Armed",
-      "event": "EnterCode",
-      "guardCodeValidation": "True",
-      "to": "Disarmed",
-      "entryAction": "CodeValidation",
-      "exitAction": "Response",
-      "insideAction": "Log"
+      "Name": "TransitionFour",
+      "From": "Armed",
+      "Event": "EnterCode",
+      "GuardCodeValidation": "True",
+      "To": "Disarmed",
+      "EntryAction": "CodeValidation",
+      "ExitAction": "Response",
+      "InsideAction": "Log"
     }
   ],
-  "initialState": "DISARMED",
-  "Definitions": [
-    {
-      "State": "State",
-      "Action": "Action",
-      "Event": "Event",
-      "state": "state",
-      "_event": "event",
-      "events": "events",
-      "actions": "actions",
-      "CurrentState": "CurrentState",
-      "guardCodeCondition": "guardCodeCondition",
-      "transitions": "transitions",
-      "entryAction": "entryAction",
-      "insideAction": "insideAction",
-      "exitAction": "exitAction",
-      "Code": "Code",
-      "code": "code",
-      "guardCodeValidation": "guardCodeValidation",
-      "_true": "True",
-      "_false": "False",
-      "OK": "Ok",
-      "ERROR": "Error",
-      "to": "to",
-      "_from": "from",
-      "time": "time",
-      "Http200": "Http 200",
-      "ARMED": "Armed",
-      "DISARMED": "Disarmed"
-    }
-  ]
+  "InitialState": "Disarmed"
 }

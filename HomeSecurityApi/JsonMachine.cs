@@ -11,43 +11,23 @@ using System.Web;
 
 namespace HomeSecurityApi
 {
-    internal struct MachineDefinition
-    {
-        public const string MachineFile = "JsonMachine.json";
-        public const string State = "State";
-        public const string Action = "Action";
-        public const string Event = "Event";
-        public const string state = "state";
-        public const string _event = "event";
-        public const string events = "events";
-        public const string actions = "actions";
-        public const string CurrentState = "CurrentState";
-        public const string guardCodeCondition = "guardCodeCondition";
-        public const string transitions = "transitions";
-        public const string entryAction = "entryAction";
-        public const string insideAction = "insideAction";
-        public const string exitAction = "exitAction";
-        public const string Code = "Code";
-        public const string code = "code";
-        public const string guardCodeValidation = "guardCodeValidation";
-        public const string _true = "True";
-        public const string _false = "False";
-        public const string OK = "Ok";
-        public const string ERROR = "Error";
-        public const string to = "to";
-        public const string _from = "from";
-        public const string time = "time";
-        public const string Http200 = "Http 200";
-        public const string ARMED = "Armed";
-        public const string DISARMED = "Disarmed";
-    }
-
     public class JsonMachine
     {
+        /// <summary>
+        /// private:
+        /// objectTrigger is a json object form of the IoT event.
+        /// SecureParameter is the calss for storing and access CurrentState and Code securly.
+        /// </summary>
         private JObject objectTrigger = new JObject();
-        private JArray arrayMachine = new JArray();
         private SecureParameter parameter = new SecureParameter();
 
+        /// <summary>
+        /// public:
+        /// json object and string of the state machine.
+        /// Response, Http200, and Log strings are prepared for the any of the state machine entry, exit or inside actions.
+        /// CodeValid is the current validation of the Code 
+        /// ApiBody.cs contains the data models for the ApiRequestBody and ApiResponseBody, ... and the string definitions 
+        /// </summary>
         public JObject MachineObject { get; private set; } = new JObject();
         public string MachineString { get; private set; } = "";
         public string Response { get; private set; } = "";
@@ -56,56 +36,74 @@ namespace HomeSecurityApi
         public bool CodeValid { get; private set; } = false;
         public ApiResponseBody ApiResponse { get; private set; } = new ApiResponseBody();
 
-        public JsonMachine()
-        {
-            MachineString = File.ReadAllText(MachineDefinition.MachineFile);
-            MachineObject = JObject.Parse(MachineString);
-        }
-
+        /// <summary>
+        /// jsonTrigger is a json string, IoT event request, the message body of lambda function
+        /// </summary>
+        /// <param name="jsonTrigger"></param>
         public JsonMachine(string jsonTrigger)
         {
+            /// <summary>
+            /// CurrentClass and Code are stored in three ways: AWS Parameter Storing, file, and as AWS Lambda Function Environment Variables
+            /// MachineDefinition is just a static class of global strings, in ApiBody.cs
+            /// </summary>
+            ApiResponse.State = EnvParameter.CurrentState();
+            ApiResponse.Response = MachineDefinition.Http200;
             try
             {
-                MachineString = File.ReadAllText(MachineDefinition.MachineFile);
-                MachineObject = JObject.Parse(MachineString);
-
-                var Def = (from s2 in MachineObject["Definitions"] select s2).ToList();
-
                 objectTrigger = JObject.Parse(jsonTrigger);
                 if (objectTrigger == null)
                 {
                     return;
                 }
+                // Reset is needed in development stage, CurrentState=Disarmed and Code=1111 
+                if ((string)objectTrigger[MachineDefinition.Reset] == MachineDefinition.True)
+                {
+                    EnvParameter.SetDefault();
+                    ApiResponse.State = EnvParameter.CurrentState();
+                    return;
+                }
+                // Connect is just for read the state of the machine before request
+                if ((string)objectTrigger[MachineDefinition.Connect] == MachineDefinition.True)
+                {
+                    return;
+                }
+                
+                MachineString = File.ReadAllText(MachineDefinition.MachineFile);
+                MachineObject = JObject.Parse(MachineString);
 
                 string[] actions = MachineObject.SelectToken(MachineDefinition.actions).Select(s1 => (string)s1).ToArray();
-
+                // Search the state machine for the proper transition, the same with trigger 
                 var objectCurrent = (from s2 in MachineObject[MachineDefinition.transitions]
-                                     where (string)s2[MachineDefinition._event] == (string)objectTrigger[MachineDefinition._event]
-                                     && (string)s2[MachineDefinition._from] == (string)objectTrigger[MachineDefinition.state]
+                                     where (string)s2[MachineDefinition.Event] == (string)objectTrigger[MachineDefinition.Event]
+                                     && (string)s2[MachineDefinition.From] == (string)objectTrigger[MachineDefinition.State]
                                      select s2).ToList();
 
-                TransiantAction(Array.FindAll(actions, s4 => s4.Equals((string)objectCurrent[0][MachineDefinition.entryAction])), objectCurrent);
-                /// 
-                /// As a constraint if the transiant has a code validation action, it must put in entryAction 
-                /// because the state transfers after entryAction
-                /// 
+                // What action must be run(or initialized) first? the action the same as entryAction in the transitition definition.
+                TransiantAction(Array.FindAll(actions, s4 => s4.Equals((string)objectCurrent[0][MachineDefinition.EntryAction])), objectCurrent);                
+                /// As a constraint if the transiant has a code validation action, it must be put in entryAction 
+                /// because the state transfers after entryAction                
                 if (CodeValid == true)
                 {
                     ChangeMachineState(objectCurrent);
                 }
-                TransiantAction(Array.FindAll(actions, s4 => s4.Equals((string)objectCurrent[0][MachineDefinition.insideAction])), objectCurrent);
-                TransiantAction(Array.FindAll(actions, s5 => s5.Equals((string)objectCurrent[0][MachineDefinition.exitAction])), objectCurrent);
-
+                // and the second action is the insideAction, finally the last one is exitAction                
+                TransiantAction(Array.FindAll(actions, s4 => s4.Equals((string)objectCurrent[0][MachineDefinition.InsideAction])), objectCurrent);
+                TransiantAction(Array.FindAll(actions, s5 => s5.Equals((string)objectCurrent[0][MachineDefinition.ExitAction])), objectCurrent);
+                // Init the Api response, current state plus Ok/Error/Http 200. (all the strings and names are defined in MachineDefinition class)
                 ApiResponse.State = EnvParameter.CurrentState();
                 ApiResponse.Response = (Response == "" && Http200 != "" ? Http200 : Response);
             }
             catch (Exception ex)
             {
                 ApiResponse.State = EnvParameter.CurrentState();
-                ApiResponse.Response = "InnerMessage: " + ex.InnerException.Message + "    ,Message: " + ex.Message + "    ,Data: " + ex.Data.ToString();
+                ApiResponse.Response = "InnerMessage: " + ex.InnerException.Message + " ;Message: " + ex.Message;
             }
         }
-
+        /// <summary>
+        /// Invoking the action by its name. Action name is Action+{CodeValidation, Response, Http200, Log , ...}
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="obj"></param>
         private void TransiantAction(string[] action, object obj)
         {
             if (action.Length == 1)
@@ -118,12 +116,15 @@ namespace HomeSecurityApi
                 }
             }
         }
-
+        /// <summary>
+        /// obj is the current transition        
+        /// </summary>
+        /// <param name="obj"></param>
         private void ActionCodeValidation(List<JToken> obj)
         {
-            if ((string)obj[0][MachineDefinition.guardCodeValidation] == MachineDefinition._true)
+            if ((string)obj[0][MachineDefinition.GuardCodeValidation] == MachineDefinition.True)
             {
-                CodeValid = EnvParameter.ValidateCode((string)objectTrigger[MachineDefinition.code]);
+                CodeValid = EnvParameter.ValidateCode((string)objectTrigger[MachineDefinition.Code]);
             }
         }
 
@@ -131,24 +132,37 @@ namespace HomeSecurityApi
         {
             Http200 = MachineDefinition.Http200;
         }
-
+        /// <summary>
+        /// We use AWS CloudWatch for logging, the log function is run after returning to lambda function body
+        /// if the Log is not empty then is logged
+        /// </summary>
+        /// <param name="obj"></param>
         private void ActionLog(List<JToken> obj)
         {
-            Log = @"{'" + MachineDefinition.state + @"':'" + (string)obj[0][MachineDefinition.state] + @"', 
-                '" + MachineDefinition._event + @"':'" + (string)objectTrigger[MachineDefinition._event] + @"', 
-                '" + MachineDefinition.time + @"':'" + DateTime.Now.ToString() + @"'}";
+            Log = @"{'" + MachineDefinition.State + @"':'" + (string)obj[0][MachineDefinition.State] + @"', 
+                '" + MachineDefinition.Event + @"':'" + (string)objectTrigger[MachineDefinition.Event] + @"', 
+                '" + MachineDefinition.Time + @"':'" + DateTime.Now.ToString() + @"'}";
         }
-
+        /// <summary>
+        /// If in the definition of transition the guard condition of Code is False, then the response(Ok and Error) is not passed
+        /// </summary>
+        /// <param name="obj"></param>
         private void ActionResponse(List<JToken> obj)
         {
-            Response = (string)obj[0][MachineDefinition.guardCodeValidation] == MachineDefinition._false ? "" : CodeValid ? MachineDefinition.OK : MachineDefinition.ERROR;
+            Response = (string)obj[0][MachineDefinition.GuardCodeValidation] == MachineDefinition.False ? "" : CodeValid ? MachineDefinition.Ok : MachineDefinition.Error;
         }
-
+        /// <summary>
+        /// The state moves from 'From' to 'To' if:
+        /// 1. Code is valid, or
+        /// 2. In the definition of transition, the guard condition of the Code validation is False
+        /// Of course that the seonnd one is not usually considered in a secure system       
+        /// </summary>
+        /// <param name="obj"></param>
         private void ChangeMachineState(List<JToken> obj)
         {
-            if ((string)obj[0][MachineDefinition.guardCodeValidation] == MachineDefinition._false || CodeValid == true)
+            if ((string)obj[0][MachineDefinition.GuardCodeValidation] == MachineDefinition.False || CodeValid == true)
             {
-                EnvParameter.ChangeCurrentState((string)obj[0][MachineDefinition.to]);
+                EnvParameter.ChangeCurrentState((string)obj[0][MachineDefinition.To]);
             }
         }
     }

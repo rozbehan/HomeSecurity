@@ -9,9 +9,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 
-
 namespace HomeSecurityApi
 {
+    /// <summary>
+    /// Make a logger with loggerfactory, but finally the system use of the log method of the context object
+    /// </summary>
     class LambdaLogger
     {
         private IConfiguration Configuration { get; }
@@ -25,8 +27,8 @@ namespace HomeSecurityApi
                 formatter: (logLevel, message, exception) => $"[{DateTime.UtcNow}] {logLevel}: {message}");
 
             // Create a logger instance from the loggerFactory
-            MachineLogger = loggerFactory.CreateLogger("AAAAA");
-            MachineLogger.LogInformation("Check the AWS Console CloudWatch Logs console in us-east-1");
+            MachineLogger = loggerFactory.CreateLogger("a");
+            MachineLogger.LogInformation("Check the AWS Console CloudWatch Logs");
         }
     }
 }

@@ -16,12 +16,22 @@ using Newtonsoft.Json.Linq;
 
 namespace HomeSecurityApi
 {
+    /// <summary>
+    /// We can reset the machine state to default state by requence key Reset, 'Reset'='True'
+    /// </summary>
     public struct Default
     {
         public const string Code = "1111";
-        public const string CurrentState = MachineDefinition.DISARMED;
+        public const string CurrentState = MachineDefinition.Disarmed;
     }
-
+    /// <summary>
+    /// Storing the CurrentState and Code.
+    /// AWS Prameter Storing Service is a secure place to save the sensitive information.
+    /// Encrypted data in a file as an alternative to save the information. But I couldn't write!
+    /// Finally I have also used the Environment Variables of AWS Lambda Function for that.
+    /// I think using the TLS or SSL along AWS Parameter Storing Service is enough and the best.
+    /// This class is for the first two.
+    /// </summary>
     public class SecureParameter
     {
         private string tmpString;
@@ -70,7 +80,11 @@ namespace HomeSecurityApi
             var a = PutSecureParameter(MachineDefinition.CurrentState, state);
             //var a = PutParameter(MachineDefinition.CurrentState, state);
         }
-
+        /// <summary>
+        /// An alternative is using the AWS services directly instead of .net SDK.
+        /// </summary>
+        /// <param name="parameterName"></param>
+        /// <returns></returns>
         private async Task<string> GetSecureParameter(string parameterName)
         {
             var client = new AmazonSimpleSystemsManagementClient(RegionEndpoint.APSoutheast2);
@@ -121,7 +135,7 @@ namespace HomeSecurityApi
             var o1 = JObject.Parse(s1);
             o1[parameterName] = value;
             tmpString = value;
-            //File.WriteAllText(@"Secure.json", JsonConvert.SerializeObject(o1));
+            File.WriteAllText(@"Secure.json", JsonConvert.SerializeObject(o1));
             return (string)o1[parameterName];
         }
     }
