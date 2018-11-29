@@ -6,31 +6,79 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Formatting;
+using Microsoft.AspNetCore.Http.Extensions;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using HomeSecurityApi;
 
 namespace MachineTest.Pages
 {
     public class IndexModel : PageModel
     {
-        static string homeSecurityApiResponse;
-        public string HomeSecurityStatus { get; private set; } = "DISARMED";
+        public string MachineResponse { get; private set; } = "";
+        [BindProperty]
+        public string MachineStatus { get; private set; } = "";
         public bool InputCodeVisible { get; private set; } = false;
+        public string Code { get; private set; }
 
         static HttpClient client = new HttpClient();
 
-
-        public static async Task<Uri> CreateProductAsync()
+        public void OnGet()
         {
-            var product = @"{'name':'mahdi'}";
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                @"https://gh21pxvwe5.execute-api.us-east-1.amazonaws.com/Prod", product);
+            if (MachineStatus == "")
+            {
+                IoTConnect();
+            }
+        }
+
+        public async Task<Uri> IoTConnect()
+        {
+            var request = JsonConvert.SerializeObject(new ApiConnectBody());
+            var a = await IoTPostAsync(request);
+            return a;
+        }
+
+        public async Task<Uri> IoTDefault()
+        {
+            var request = JsonConvert.SerializeObject(new ApiDefaultBody());
+            var a = await IoTPostAsync(request);
+            return a;
+        }
+
+        public async Task<Uri> IoTArm()
+        {
+            var request = JsonConvert.SerializeObject(new ApiRequestBody() { Event = "Arm", State = "Disarmed", Code = "1111" });
+            var a = await IoTPostAsync(request);
+            return a;
+        }
+
+        public async Task<Uri> IoTDisarm()
+        {
+            var request = JsonConvert.SerializeObject(new ApiRequestBody() { Event = "Disarm", State = "Armed", Code = "1111" });
+            var a = await IoTPostAsync(request);
+            return a;
+        }
+
+        public async Task<Uri> IoTPostAsync(string request)
+        {
+            HttpResponseMessage response = await client.PostAsync(
+                Startup.HomeSecurityApiUrl, new StringContent(request, Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
 
-            homeSecurityApiResponse = await response.Content.ReadAsStringAsync();
+            MachineResponse = await response.Content.ReadAsStringAsync();
+            SetModel();
 
             return response.Headers.Location;
         }
 
+        private void SetModel()
+        {
+            JObject apiResponse = new JObject();
+            apiResponse = JObject.Parse(MachineResponse);
+            //MachineStatus = (string)apiResponse.SelectToken(MachineDefinition.State);
+            //InputCodeVisible = false;
+        }
 
     }
 }
